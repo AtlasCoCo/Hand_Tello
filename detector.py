@@ -43,6 +43,7 @@ class Detector:
         self.sess2 = tf.Session(graph=self.graph2)
 
         self.dictList = {0: 'back', 1: 'left', 2: 'right', 3: 'up', 4: 'down', 5: 'front'}
+        self.temp_result = ''
 
         # Create kalman filters
         if FLAGS.use_kalman:
@@ -63,6 +64,7 @@ class Detector:
             self.kalman_filter_array = None
 
         # load model
+        print(" Loading joint model.")
         with self.sess1.as_default():
             with self.graph1.as_default():
                 tf.global_variables_initializer().run()
@@ -77,6 +79,7 @@ class Detector:
                         var = self.graph1.get_tensor_by_name(variable.name)
                         print(variable.name, np.mean(self.sess1.run(var)))
 
+        print(" Loading classify model.")
         with self.sess2.as_default():
             with self.graph2.as_default():
                 tf.global_variables_initializer().run()
@@ -306,7 +309,7 @@ class Detector:
                     classification_result = self.sess2.run(self.output_node2, feed_dict={self.input_node2: data})
 
                     # 打印出预测矩阵
-                    print(classification_result)
+                    # print(classification_result)
                     # 打印出预测矩阵每一行最大值的索引
                     # print(tf.argmax(classification_result, 1).eval())
                     # 根据索引通过字典对应花的分类
@@ -314,7 +317,7 @@ class Detector:
                     print("手势预测: ", self.dictList[output[0]])
                     result = self.dictList[output[0]]
 
-        print('FPS: %.2f' % (1 / (time.time() - t1)))
+        # print('FPS: %.2f' % (1 / (time.time() - t1)))
 
         cv2.imshow('local_img', local_img.astype(np.uint8))
         cv2.imshow('global_img', full_img.astype(np.uint8))

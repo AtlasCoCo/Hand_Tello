@@ -37,6 +37,8 @@ import cv2
 from pynput import keyboard
 import tensorflow
 import detector
+from config import FLAGS
+
 
 class TelloCV(object):
     """
@@ -65,6 +67,8 @@ class TelloCV(object):
 
         self.track_cmd = ""
         self.hand_detector = detector.Detector()
+        self.detect_count = 0
+        self.result_count = 0
 
     def init_drone(self):
         """Connect, uneable streaming and subscribe to events"""
@@ -148,36 +152,48 @@ class TelloCV(object):
         image = cv2.cvtColor(numpy.array(frame.to_image()), cv2.COLOR_RGB2BGR)
         if self.record:
             self.record_vid(frame)
-
-        result = self.hand_detector.detect(frame)
-
-        self.dictList = {0: 'back', 1: 'left', 2: 'right', 3: 'up', 4: 'down', 5: 'front'}
+        input_image = cv2.resize(image, (FLAGS.webcam_width, FLAGS.webcam_height))
+        result = 'None'
         cmd = ""
-        if self.tracking:
-            if result is 'back':
-                cmd = "backward"
-            elif result is 'left':
-                cmd = "left"
-            elif result is 'right':
-                cmd = "right"
-            elif result is 'up':
-                cmd = "up"
-            elif result is 'down':
-                cmd = "down"
-            elif result is 'front':
-                cmd = "forward"
+
+        self.detect_count += 1
+        if self.detect_count >= 30 and self.tracking:
+            result = self.hand_detector.detect(input_image)
+            self.detect_count = 0
+            if self.hand_detector.temp_result is result:
+                self.result_count += 1
             else:
-                if self.track_cmd is not "":
-                    getattr(self.drone, self.track_cmd)(0)
-                    self.track_cmd = ""
+                self.result_count = 0
+            self.hand_detector.temp_result = result
+            if self.result_count >= 5:
+                self.result_count = 0
+                if result is 'back':
+                    cmd = "backward"
+                elif result is 'left':
+                    cmd = "left"
+                elif result is 'right':
+                    cmd = "right"
+                elif result is 'up':
+                    cmd = "up"
+                elif result is 'down':
+                    cmd = "down"
+                elif result is 'front':
+                    cmd = "forward"
+                else:
+                    if self.track_cmd is not "":
+                        getattr(self.drone, self.track_cmd)(0)
+                        self.track_cmd = ""
 
         # print('cmd: ', cmd)
 
-        if cmd is not self.track_cmd:
-            if cmd is not "":
+        if cmd is not self.track_cmd and cmd is not "":
                 print("track command:", cmd)
                 getattr(self.drone, cmd)(self.speed)
                 self.track_cmd = cmd
+        else:
+            if self.detect_count >= 20 and self.track_cmd is not "":
+                getattr(self.drone, self.track_cmd)(0)
+                self.track_cmd = ""
 
         image = self.write_hud(image)
         return image

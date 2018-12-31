@@ -58,7 +58,6 @@ class SelfTracker(object):
                 max(0, center[1]-size[1]//2), min(self.img_shape[1], center[1]+size[1]//2+w_offset)]
         return full_img[self.bbox[0]:self.bbox[1], self.bbox[2]:self.bbox[3], :]
 
-
     def _pad_image(self, img, size):
         h, w, _ = img.shape
         if size < h or size < w:
