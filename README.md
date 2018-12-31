@@ -1,6 +1,12 @@
 # Hand_Tello
 
-###dependency:
+a simple use Hand Gesture to control Tello UAV based on tensorflow. 
+Gesture recognition have two step: 1. Find Hand joints; 2. Gesture Classification.
+
+@danquxunhuan130
+MIT LICENSE
+
+### dependency:
 
 ```
 tensorflow-gpu == 1.11.0
